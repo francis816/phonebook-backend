@@ -1,8 +1,22 @@
 const express = require('express')
 const app = express()
+const morgan = require('morgan')
+
+// I prefer the self-made middleware > morgan
+const requestLogger = (request, response, next) => {
+    console.log("Method:", request.method);
+    console.log("Path:  ", request.path);
+    console.log("Body:  ", request.body);
+    console.log("---");
+    next();
+};
 
 app.use(express.json())
+app.use(morgan(":method :url :status :res[content-length] - :response-time ms :body"))
+// requestLogger must be used after json parser
+app.use(requestLogger);
 
+morgan.token("body", request => JSON.stringify(request.body));
 
 let persons = [
     {
@@ -87,6 +101,17 @@ app.post('/api/persons', (request, response) => {
     persons = persons.concat(person)
     response.json(person)
 })
+
+
+// e.g. if someone tries to go to localhost:3001/akjkajg
+// we will send him an error in JSON on the page 
+const unknownEndpoint = (request, response) => {
+    response.status(404).send({ error: 'unknown endpoint' })
+}
+
+app.use(unknownEndpoint)
+
+
 
 const PORT = 3001
 app.listen(PORT, () => {
