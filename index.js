@@ -1,3 +1,4 @@
+require('dotenv').config()
 const express = require('express')
 const app = express()
 const morgan = require('morgan')
@@ -10,7 +11,7 @@ const requestLogger = (request, response, next) => {
     console.log("---");
     next();
 };
-
+const Person = require('./models/person')
 
 app.use(cors())
 app.use(express.static('build'))
@@ -45,7 +46,9 @@ let persons = [
 ]
 
 app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Person.find({}).then(persons => {
+        response.json(persons)
+    })
 })
 
 app.get('/info', (request, response) => {
@@ -53,15 +56,18 @@ app.get('/info', (request, response) => {
 })
 
 app.get('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id)
-    const person = persons.find(person => {
-        return person.id === id
-    })
-    if (person) {
+    // const id = Number(request.params.id)
+    // const person = persons.find(person => {
+    //     return person.id === id
+    // })
+    // if (person) {
+
+    // } else {
+    //     response.status(404).end()
+    // }
+    Person.findById(request.params.id).then(person => {
         response.json(person)
-    } else {
-        response.status(404).end()
-    }
+    })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
@@ -96,13 +102,19 @@ app.post('/api/persons', (request, response) => {
             error: "number missing"
         })
     }
-    const person = {
+    const person = new Person({
         "id": Math.floor(Math.random() * 1000000000),
         "name": body.name,
         "number": body.number
-    }
-    persons = persons.concat(person)
-    response.json(person)
+    })
+
+
+    // persons = persons.concat(person)
+
+    person.save().then(savedPerson => {
+        response.json(savedPerson)
+    })
+
 })
 
 
